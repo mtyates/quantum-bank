@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantum-bank
+  namespace: quantum-bank
+  labels:
+    app: quantum-bank
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quantum-bank
+  template:
+    metadata:
+      labels:
+        app: quantum-bank
+    spec:
+      containers:
+        - name: quantum-bank
+          image: mtyates/quantum-bank:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quantum-bank-secrets
+                  key: SECRET_KEY
+            - name: SPLIT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quantum-bank-secrets
+                  key: SPLIT_API_KEY
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantum-bank
+  namespace: quantum-bank
+  labels:
+    app: quantum-bank
+spec:
+  type: ClusterIP
+  selector:
+    app: quantum-bank
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP
